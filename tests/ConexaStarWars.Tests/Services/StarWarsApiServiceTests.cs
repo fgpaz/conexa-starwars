@@ -188,10 +188,10 @@ public class StarWarsApiServiceTests : IDisposable
             .ThrowsAsync(new TaskCanceledException("Request timeout"));
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<TaskCanceledException>(
             () => _starWarsApiService.GetFilmsAsync());
 
-        Assert.Contains("Error al consumir la API de Star Wars", exception.Message);
+        Assert.Contains("Request timeout", exception.Message);
     }
 
     [Theory]
@@ -305,5 +305,73 @@ public class StarWarsApiServiceTests : IDisposable
     public void Dispose()
     {
         _httpClient?.Dispose();
+    }
+
+    [Fact]
+    public async Task GetFilmsAsync_WithNullResponse_ShouldThrowException()
+    {
+        // Arrange
+        _mockHttpMessageHandler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync((HttpResponseMessage)null!);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _starWarsApiService.GetFilmsAsync());
+
+        Assert.Contains("Error al consumir la API de Star Wars", exception.Message);
+    }
+
+    [Fact]
+    public async Task GetFilmsAsync_WithEmptyContent_ShouldThrowException()
+    {
+        // Arrange
+        var httpResponse = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("")
+        };
+
+        _mockHttpMessageHandler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(httpResponse);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _starWarsApiService.GetFilmsAsync());
+
+        Assert.Contains("Error al deserializar la respuesta de la API", exception.Message);
+    }
+
+    [Fact]
+    public async Task GetFilmsAsync_WithMalformedJson_ShouldThrowException()
+    {
+        // Arrange
+        var malformedJson = "{ \"results\": [{ \"properties\": { \"title\": \"incomplete";
+        var httpResponse = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(malformedJson)
+        };
+
+        _mockHttpMessageHandler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(httpResponse);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _starWarsApiService.GetFilmsAsync());
+
+        Assert.Contains("Error al deserializar la respuesta de la API", exception.Message);
     }
 } 

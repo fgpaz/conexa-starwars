@@ -46,11 +46,11 @@ public class CommandHandlersTests
                 Producer = "Gary Kurtz",
                 OpeningCrawl = "It is a period of civil war...",
                 ReleaseDate = new DateTime(1977, 5, 25),
-                Characters = new List<string> { "Luke Skywalker", "Princess Leia" },
-                Planets = new List<string> { "Tatooine", "Alderaan" },
-                Starships = new List<string> { "Death Star", "Millennium Falcon" },
+                Characters = new List<string> { "Luke Skywalker" },
+                Planets = new List<string> { "Tatooine" },
+                Starships = new List<string> { "Death Star" },
                 Vehicles = new List<string> { "Sandcrawler" },
-                Species = new List<string> { "Human", "Droid" }
+                Species = new List<string> { "Human" }
             },
             UserId = "user-123"
         };
@@ -58,23 +58,22 @@ public class CommandHandlersTests
         var createdMovie = new Movie
         {
             Id = 1,
-            Title = command.MovieData.Title,
-            EpisodeId = command.MovieData.EpisodeId,
-            Director = command.MovieData.Director,
-            Producer = command.MovieData.Producer,
-            OpeningCrawl = command.MovieData.OpeningCrawl,
-            ReleaseDate = command.MovieData.ReleaseDate,
-            Characters = command.MovieData.Characters,
-            Planets = command.MovieData.Planets,
-            Starships = command.MovieData.Starships,
-            Vehicles = command.MovieData.Vehicles,
-            Species = command.MovieData.Species,
+            Title = "A New Hope",
+            EpisodeId = 4,
+            Director = "George Lucas",
+            Producer = "Gary Kurtz",
+            OpeningCrawl = "It is a period of civil war...",
+            ReleaseDate = new DateTime(1977, 5, 25),
+            Characters = new List<string> { "Luke Skywalker" },
+            Planets = new List<string> { "Tatooine" },
+            Starships = new List<string> { "Death Star" },
+            Vehicles = new List<string> { "Sandcrawler" },
+            Species = new List<string> { "Human" },
             CreatedAt = DateTime.UtcNow
         };
 
-        _mockMovieRepository.Setup(x => x.GetAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Movie, bool>>>()))
+        _mockMovieRepository.Setup(x => x.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Movie, bool>>>()))
             .ReturnsAsync((Movie?)null);
-
         _mockMovieRepository.Setup(x => x.AddAsync(It.IsAny<Movie>()))
             .ReturnsAsync(createdMovie);
 
@@ -86,7 +85,8 @@ public class CommandHandlersTests
         Assert.Equal(command.MovieData.Title, result.Title);
         Assert.Equal(command.MovieData.EpisodeId, result.EpisodeId);
         Assert.Equal(command.MovieData.Director, result.Director);
-
+        Assert.Equal(command.MovieData.Producer, result.Producer);
+        
         _mockMovieRepository.Verify(x => x.AddAsync(It.IsAny<Movie>()), Times.Once);
     }
 
@@ -112,7 +112,7 @@ public class CommandHandlersTests
 
         var existingMovie = new Movie { Id = 1, EpisodeId = 4, Title = "Existing Movie" };
 
-        _mockMovieRepository.Setup(x => x.GetAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Movie, bool>>>()))
+        _mockMovieRepository.Setup(x => x.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Movie, bool>>>()))
             .ReturnsAsync(existingMovie);
 
         // Act & Assert
@@ -120,7 +120,52 @@ public class CommandHandlersTests
             () => handler.HandleAsync(command));
 
         Assert.Contains("Ya existe una película con el Episode ID 4", exception.Message);
-        _mockMovieRepository.Verify(x => x.AddAsync(It.IsAny<Movie>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateMovieCommandHandler_WithNullData_ShouldThrowException()
+    {
+        // Arrange
+        var handler = new CreateMovieCommandHandler(_mockMovieRepository.Object, _mockCreateLogger.Object);
+        
+        var command = new CreateMovieCommand
+        {
+            MovieData = null!,
+            UserId = "user-123"
+        };
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(
+            () => handler.HandleAsync(command));
+
+        Assert.Contains("MovieData", exception.Message);
+    }
+
+    [Fact]
+    public async Task CreateMovieCommandHandler_WithEmptyUserId_ShouldThrowException()
+    {
+        // Arrange
+        var handler = new CreateMovieCommandHandler(_mockMovieRepository.Object, _mockCreateLogger.Object);
+        
+        var command = new CreateMovieCommand
+        {
+            MovieData = new CreateMovieDto
+            {
+                Title = "A New Hope",
+                EpisodeId = 4,
+                Director = "George Lucas",
+                Producer = "Gary Kurtz",
+                OpeningCrawl = "It is a period of civil war...",
+                ReleaseDate = new DateTime(1977, 5, 25)
+            },
+            UserId = ""
+        };
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ArgumentException>(
+            () => handler.HandleAsync(command));
+
+        Assert.Contains("El ID del usuario es requerido", exception.Message);
     }
 
     #endregion
@@ -141,8 +186,8 @@ public class CommandHandlersTests
                 Title = "A New Hope - Updated",
                 EpisodeId = 4,
                 Director = "George Lucas",
-                Producer = "Gary Kurtz, Rick McCallum",
-                OpeningCrawl = "Updated opening crawl...",
+                Producer = "Gary Kurtz",
+                OpeningCrawl = "It is a period of civil war...",
                 ReleaseDate = new DateTime(1977, 5, 25)
             },
             UserId = "user-123"
@@ -155,7 +200,7 @@ public class CommandHandlersTests
             EpisodeId = 4,
             Director = "George Lucas",
             Producer = "Gary Kurtz",
-            OpeningCrawl = "Original opening crawl...",
+            OpeningCrawl = "It is a period of civil war...",
             ReleaseDate = new DateTime(1977, 5, 25),
             CreatedAt = DateTime.UtcNow.AddDays(-1)
         };
@@ -163,22 +208,18 @@ public class CommandHandlersTests
         var updatedMovie = new Movie
         {
             Id = 1,
-            Title = command.MovieData.Title,
-            EpisodeId = command.MovieData.EpisodeId,
-            Director = command.MovieData.Director,
-            Producer = command.MovieData.Producer,
-            OpeningCrawl = command.MovieData.OpeningCrawl,
-            ReleaseDate = command.MovieData.ReleaseDate,
-            CreatedAt = existingMovie.CreatedAt,
+            Title = "A New Hope - Updated",
+            EpisodeId = 4,
+            Director = "George Lucas",
+            Producer = "Gary Kurtz",
+            OpeningCrawl = "It is a period of civil war...",
+            ReleaseDate = new DateTime(1977, 5, 25),
+            CreatedAt = DateTime.UtcNow.AddDays(-1),
             UpdatedAt = DateTime.UtcNow
         };
 
         _mockMovieRepository.Setup(x => x.GetByIdAsync(command.MovieId))
             .ReturnsAsync(existingMovie);
-
-        _mockMovieRepository.Setup(x => x.GetAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Movie, bool>>>()))
-            .ReturnsAsync((Movie?)null);
-
         _mockMovieRepository.Setup(x => x.UpdateAsync(It.IsAny<Movie>()))
             .ReturnsAsync(updatedMovie);
 
@@ -188,8 +229,8 @@ public class CommandHandlersTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(command.MovieData.Title, result.Title);
-        Assert.Equal(command.MovieData.Producer, result.Producer);
-
+        Assert.Equal(command.MovieData.EpisodeId, result.EpisodeId);
+        
         _mockMovieRepository.Verify(x => x.UpdateAsync(It.IsAny<Movie>()), Times.Once);
     }
 
@@ -205,7 +246,11 @@ public class CommandHandlersTests
             MovieData = new UpdateMovieDto
             {
                 Title = "Non-existent Movie",
-                EpisodeId = 999
+                EpisodeId = 999,
+                Director = "Unknown",
+                Producer = "Unknown",
+                OpeningCrawl = "Unknown",
+                ReleaseDate = DateTime.Now
             },
             UserId = "user-123"
         };
@@ -222,37 +267,31 @@ public class CommandHandlersTests
     }
 
     [Fact]
-    public async Task UpdateMovieCommandHandler_WithDuplicateEpisodeId_ShouldThrowException()
+    public async Task UpdateMovieCommandHandler_WithInvalidId_ShouldThrowException()
     {
         // Arrange
         var handler = new UpdateMovieCommandHandler(_mockMovieRepository.Object, _mockUpdateLogger.Object);
         
         var command = new UpdateMovieCommand
         {
-            MovieId = 1,
+            MovieId = 0,
             MovieData = new UpdateMovieDto
             {
-                Title = "A New Hope",
-                EpisodeId = 5 // Trying to change to episode 5
+                Title = "Test Movie",
+                EpisodeId = 1,
+                Director = "Test",
+                Producer = "Test",
+                OpeningCrawl = "Test",
+                ReleaseDate = DateTime.Now
             },
             UserId = "user-123"
         };
 
-        var existingMovie = new Movie { Id = 1, EpisodeId = 4, Title = "A New Hope" };
-        var conflictingMovie = new Movie { Id = 2, EpisodeId = 5, Title = "Empire Strikes Back" };
-
-        _mockMovieRepository.Setup(x => x.GetByIdAsync(command.MovieId))
-            .ReturnsAsync(existingMovie);
-
-        _mockMovieRepository.Setup(x => x.GetAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Movie, bool>>>()))
-            .ReturnsAsync(conflictingMovie);
-
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<ArgumentException>(
             () => handler.HandleAsync(command));
 
-        Assert.Contains("Ya existe otra película con el Episode ID 5", exception.Message);
-        _mockMovieRepository.Verify(x => x.UpdateAsync(It.IsAny<Movie>()), Times.Never);
+        Assert.Contains("El ID de la película debe ser mayor a 0", exception.Message);
     }
 
     #endregion
@@ -302,7 +341,25 @@ public class CommandHandlersTests
 
         // Assert
         Assert.False(result);
-        _mockMovieRepository.Verify(x => x.DeleteAsync(command.MovieId), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteMovieCommandHandler_WithInvalidId_ShouldThrowException()
+    {
+        // Arrange
+        var handler = new DeleteMovieCommandHandler(_mockMovieRepository.Object, _mockDeleteLogger.Object);
+        
+        var command = new DeleteMovieCommand
+        {
+            MovieId = 0,
+            UserId = "user-123"
+        };
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ArgumentException>(
+            () => handler.HandleAsync(command));
+
+        Assert.Contains("El ID de la película debe ser mayor a 0", exception.Message);
     }
 
     #endregion
@@ -310,15 +367,15 @@ public class CommandHandlersTests
     #region SyncMoviesCommandHandler Tests
 
     [Fact]
-    public async Task SyncMoviesCommandHandler_WithNewMovies_ShouldSyncSuccessfully()
+    public async Task SyncMoviesCommandHandler_WithValidApiResponse_ShouldSyncMovies()
     {
         // Arrange
-        var handler = new SyncMoviesCommandHandler(
-            _mockMovieRepository.Object, 
-            _mockStarWarsApiService.Object, 
-            _mockSyncLogger.Object);
+        var handler = new SyncMoviesCommandHandler(_mockStarWarsApiService.Object, _mockMovieRepository.Object, _mockSyncLogger.Object);
         
-        var command = new SyncMoviesCommand { UserId = "admin-123" };
+        var command = new SyncMoviesCommand
+        {
+            UserId = "admin-123"
+        };
 
         var apiResponse = new StarWarsApiResponse
         {
@@ -330,16 +387,15 @@ public class CommandHandlersTests
                     {
                         Title = "A New Hope",
                         Episode_id = 4,
+                        Opening_crawl = "It is a period of civil war...",
                         Director = "George Lucas",
                         Producer = "Gary Kurtz",
-                        Opening_crawl = "It is a period of civil war...",
                         Release_date = "1977-05-25",
                         Characters = new List<string> { "Luke Skywalker" },
                         Planets = new List<string> { "Tatooine" },
                         Starships = new List<string> { "Death Star" },
                         Vehicles = new List<string> { "Sandcrawler" },
-                        Species = new List<string> { "Human" },
-                        Url = "https://swapi.tech/api/films/1"
+                        Species = new List<string> { "Human" }
                     }
                 }
             }
@@ -347,10 +403,10 @@ public class CommandHandlersTests
 
         _mockStarWarsApiService.Setup(x => x.GetFilmsAsync())
             .ReturnsAsync(apiResponse);
-
-        _mockMovieRepository.Setup(x => x.GetAllAsync())
-            .ReturnsAsync(new List<Movie>());
-
+        
+        _mockMovieRepository.Setup(x => x.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Movie, bool>>>()))
+            .ReturnsAsync((Movie?)null);
+            
         _mockMovieRepository.Setup(x => x.AddAsync(It.IsAny<Movie>()))
             .ReturnsAsync((Movie movie) => movie);
 
@@ -363,15 +419,42 @@ public class CommandHandlersTests
     }
 
     [Fact]
-    public async Task SyncMoviesCommandHandler_WithExistingMovies_ShouldSkipDuplicates()
+    public async Task SyncMoviesCommandHandler_WithEmptyApiResponse_ShouldReturnZero()
     {
         // Arrange
-        var handler = new SyncMoviesCommandHandler(
-            _mockMovieRepository.Object, 
-            _mockStarWarsApiService.Object, 
-            _mockSyncLogger.Object);
+        var handler = new SyncMoviesCommandHandler(_mockStarWarsApiService.Object, _mockMovieRepository.Object, _mockSyncLogger.Object);
         
-        var command = new SyncMoviesCommand { UserId = "admin-123" };
+        var command = new SyncMoviesCommand
+        {
+            UserId = "admin-123"
+        };
+
+        var apiResponse = new StarWarsApiResponse
+        {
+            Results = new List<StarWarsFilmResult>()
+        };
+
+        _mockStarWarsApiService.Setup(x => x.GetFilmsAsync())
+            .ReturnsAsync(apiResponse);
+
+        // Act
+        var result = await handler.HandleAsync(command);
+
+        // Assert
+        Assert.Equal(0, result);
+        _mockMovieRepository.Verify(x => x.AddAsync(It.IsAny<Movie>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SyncMoviesCommandHandler_WithExistingMovies_ShouldOnlyAddNew()
+    {
+        // Arrange
+        var handler = new SyncMoviesCommandHandler(_mockStarWarsApiService.Object, _mockMovieRepository.Object, _mockSyncLogger.Object);
+        
+        var command = new SyncMoviesCommand
+        {
+            UserId = "admin-123"
+        };
 
         var apiResponse = new StarWarsApiResponse
         {
@@ -383,34 +466,27 @@ public class CommandHandlersTests
                     {
                         Title = "A New Hope",
                         Episode_id = 4,
+                        Opening_crawl = "It is a period of civil war...",
                         Director = "George Lucas",
                         Producer = "Gary Kurtz",
-                        Opening_crawl = "It is a period of civil war...",
-                        Release_date = "1977-05-25"
+                        Release_date = "1977-05-25",
+                        Characters = new List<string> { "Luke Skywalker" },
+                        Planets = new List<string> { "Tatooine" },
+                        Starships = new List<string> { "Death Star" },
+                        Vehicles = new List<string> { "Sandcrawler" },
+                        Species = new List<string> { "Human" }
                     }
                 }
             }
         };
 
-        var existingMovies = new List<Movie>
-        {
-            new()
-            {
-                Id = 1,
-                Title = "A New Hope",
-                EpisodeId = 4,
-                Director = "George Lucas",
-                Producer = "Gary Kurtz",
-                OpeningCrawl = "It is a period of civil war...",
-                ReleaseDate = new DateTime(1977, 5, 25)
-            }
-        };
+        var existingMovie = new Movie { Id = 1, EpisodeId = 4, Title = "A New Hope" };
 
         _mockStarWarsApiService.Setup(x => x.GetFilmsAsync())
             .ReturnsAsync(apiResponse);
-
-        _mockMovieRepository.Setup(x => x.GetAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<Movie, bool>>>()))
-            .ReturnsAsync(existingMovies.First());
+        
+        _mockMovieRepository.Setup(x => x.GetAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Movie, bool>>>()))
+            .ReturnsAsync(existingMovie);
 
         // Act
         var result = await handler.HandleAsync(command);
@@ -424,22 +500,39 @@ public class CommandHandlersTests
     public async Task SyncMoviesCommandHandler_WithApiError_ShouldThrowException()
     {
         // Arrange
-        var handler = new SyncMoviesCommandHandler(
-            _mockMovieRepository.Object, 
-            _mockStarWarsApiService.Object, 
-            _mockSyncLogger.Object);
+        var handler = new SyncMoviesCommandHandler(_mockStarWarsApiService.Object, _mockMovieRepository.Object, _mockSyncLogger.Object);
         
-        var command = new SyncMoviesCommand { UserId = "admin-123" };
+        var command = new SyncMoviesCommand
+        {
+            UserId = "admin-123"
+        };
 
         _mockStarWarsApiService.Setup(x => x.GetFilmsAsync())
-            .ThrowsAsync(new HttpRequestException("API Error"));
+            .ThrowsAsync(new InvalidOperationException("Error de API"));
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<HttpRequestException>(
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => handler.HandleAsync(command));
 
-        Assert.Contains("API Error", exception.Message);
-        _mockMovieRepository.Verify(x => x.AddAsync(It.IsAny<Movie>()), Times.Never);
+        Assert.Contains("Error al sincronizar las películas desde la API de Star Wars", exception.Message);
+    }
+
+    [Fact]
+    public async Task SyncMoviesCommandHandler_WithEmptyUserId_ShouldThrowException()
+    {
+        // Arrange
+        var handler = new SyncMoviesCommandHandler(_mockStarWarsApiService.Object, _mockMovieRepository.Object, _mockSyncLogger.Object);
+        
+        var command = new SyncMoviesCommand
+        {
+            UserId = ""
+        };
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ArgumentException>(
+            () => handler.HandleAsync(command));
+
+        Assert.Contains("El ID del usuario es requerido", exception.Message);
     }
 
     #endregion

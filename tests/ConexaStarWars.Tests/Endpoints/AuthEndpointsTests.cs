@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ConexaStarWars.Tests.Endpoints;
 
@@ -28,6 +29,18 @@ public class AuthEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
                 var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(IAuthService));
                 if (descriptor != null) services.Remove(descriptor);
                 services.AddScoped(_ => _mockAuthService.Object);
+
+                // Configurar autenticación de prueba
+                services.AddAuthentication("Test")
+                    .AddScheme<TestAuthenticationSchemeOptions, TestAuthenticationHandler>("Test", options => { });
+                    
+                // Configurar autorización sin roles para simplificar tests
+                services.AddAuthorization(options =>
+                {
+                    options.DefaultPolicy = new AuthorizationPolicyBuilder("Test")
+                        .RequireAuthenticatedUser()
+                        .Build();
+                });
             });
         });
 
@@ -42,6 +55,7 @@ public class AuthEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
         {
             Email = "test@example.com",
             Password = "Test123!",
+            ConfirmPassword = "Test123!",
             FirstName = "Test",
             LastName = "User"
         };
@@ -52,7 +66,8 @@ public class AuthEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
             Email = "test@example.com",
             FirstName = "Test",
             LastName = "User",
-            Roles = new List<string> { "RegularUser" }
+            Roles = new List<string> { "RegularUser" },
+            ExpiresAt = DateTime.UtcNow.AddHours(24)
         };
 
         _mockAuthService.Setup(s => s.RegisterAsync(It.IsAny<RegisterDto>()))
@@ -81,8 +96,29 @@ public class AuthEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
         // Arrange
         var registerDto = new RegisterDto
         {
+            Email = "invalid-email", // Email inválido
+            Password = "123", // Password muy corto
+            ConfirmPassword = "456", // Passwords no coinciden
+            FirstName = "",
+            LastName = ""
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/auth/register", registerDto);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Register_WithDuplicateEmail_ShouldReturnBadRequest()
+    {
+        // Arrange
+        var registerDto = new RegisterDto
+        {
             Email = "test@example.com",
             Password = "Test123!",
+            ConfirmPassword = "Test123!",
             FirstName = "Test",
             LastName = "User"
         };
@@ -116,7 +152,8 @@ public class AuthEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
             Email = "test@example.com",
             FirstName = "Test",
             LastName = "User",
-            Roles = new List<string> { "RegularUser" }
+            Roles = new List<string> { "RegularUser" },
+            ExpiresAt = DateTime.UtcNow.AddHours(24)
         };
 
         _mockAuthService.Setup(s => s.LoginAsync(It.IsAny<LoginDto>()))
@@ -160,6 +197,23 @@ public class AuthEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
+    public async Task Login_WithInvalidData_ShouldReturnBadRequest()
+    {
+        // Arrange
+        var loginDto = new LoginDto
+        {
+            Email = "", // Email vacío
+            Password = "" // Password vacío
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/auth/login", loginDto);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Login_WithServerError_ShouldReturnInternalServerError()
     {
         // Arrange
@@ -174,6 +228,29 @@ public class AuthEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/auth/login", loginDto);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Register_WithServerError_ShouldReturnInternalServerError()
+    {
+        // Arrange
+        var registerDto = new RegisterDto
+        {
+            Email = "test@example.com",
+            Password = "Test123!",
+            ConfirmPassword = "Test123!",
+            FirstName = "Test",
+            LastName = "User"
+        };
+
+        _mockAuthService.Setup(s => s.RegisterAsync(It.IsAny<RegisterDto>()))
+            .ThrowsAsync(new Exception("Error interno"));
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/auth/register", registerDto);
 
         // Assert
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);

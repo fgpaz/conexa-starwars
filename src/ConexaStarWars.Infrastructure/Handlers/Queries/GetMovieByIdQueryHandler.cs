@@ -45,6 +45,3 @@ public class GetMovieByIdQueryHandler(
         }
     }
 }
-
-// Necesito crear la excepción NotFoundException en el proyecto Infrastructure
-public class NotFoundException(string message) : Exception(message);

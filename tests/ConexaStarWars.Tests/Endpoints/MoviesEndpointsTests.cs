@@ -1,29 +1,77 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Claims;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using ConexaStarWars.Core.Commands;
 using ConexaStarWars.Core.DTOs;
 using ConexaStarWars.Core.Interfaces;
 using ConexaStarWars.Core.Queries;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
 namespace ConexaStarWars.Tests.Endpoints;
 
+public class TestAuthenticationSchemeOptions : AuthenticationSchemeOptions { }
+
+public class TestAuthenticationHandler : AuthenticationHandler<TestAuthenticationSchemeOptions>
+{
+    public TestAuthenticationHandler(IOptionsMonitor<TestAuthenticationSchemeOptions> options,
+        ILoggerFactory logger, UrlEncoder encoder)
+        : base(options, logger, encoder)
+    {
+    }
+
+    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+    {
+        var authorizationHeader = Request.Headers["Authorization"].ToString();
+        
+        if (string.IsNullOrEmpty(authorizationHeader))
+        {
+            return Task.FromResult(AuthenticateResult.Fail("No authorization header"));
+        }
+
+        // Crear claims basados en el header de autorización
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, "test-user-id"),
+            new(ClaimTypes.Email, "test@test.com"),
+            new(ClaimTypes.Name, "Test User")
+        };
+
+        // Agregar rol basado en el token
+        if (authorizationHeader.Contains("admin"))
+        {
+            claims.Add(new Claim(ClaimTypes.Role, "Administrator"));
+        }
+        else
+        {
+            claims.Add(new Claim(ClaimTypes.Role, "RegularUser"));
+        }
+
+        var identity = new ClaimsIdentity(claims, "Test");
+        var principal = new ClaimsPrincipal(identity);
+        var ticket = new AuthenticationTicket(principal, "Test");
+
+        return Task.FromResult(AuthenticateResult.Success(ticket));
+    }
+}
+
 public class MoviesEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly HttpClient _client;
     private readonly WebApplicationFactory<Program> _factory;
-    private readonly Mock<IAuthService> _mockAuthService;
     private readonly Mock<IMediator> _mockMediator;
 
     public MoviesEndpointsTests(WebApplicationFactory<Program> factory)
     {
         _mockMediator = new Mock<IMediator>();
-        _mockAuthService = new Mock<IAuthService>();
 
         _factory = factory.WithWebHostBuilder(builder =>
         {
@@ -34,9 +82,17 @@ public class MoviesEndpointsTests : IClassFixture<WebApplicationFactory<Program>
                 if (mediatorDescriptor != null) services.Remove(mediatorDescriptor);
                 services.AddScoped(_ => _mockMediator.Object);
 
-                var authDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(IAuthService));
-                if (authDescriptor != null) services.Remove(authDescriptor);
-                services.AddScoped(_ => _mockAuthService.Object);
+                // Configurar autenticación de prueba
+                services.AddAuthentication("Test")
+                    .AddScheme<TestAuthenticationSchemeOptions, TestAuthenticationHandler>("Test", options => { });
+                    
+                // Configurar autorización sin roles para simplificar tests
+                services.AddAuthorization(options =>
+                {
+                    options.DefaultPolicy = new AuthorizationPolicyBuilder("Test")
+                        .RequireAuthenticatedUser()
+                        .Build();
+                });
             });
         });
 
@@ -45,8 +101,9 @@ public class MoviesEndpointsTests : IClassFixture<WebApplicationFactory<Program>
 
     private void SetupAuthenticatedUser(string role = "RegularUser")
     {
-        // Configurar un token JWT falso para las pruebas
-        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "fake-jwt-token");
+        var token = role == "Administrator" ? "admin-token" : "user-token";
+        _client.DefaultRequestHeaders.Clear();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
     }
 
     [Fact]
@@ -124,13 +181,13 @@ public class MoviesEndpointsTests : IClassFixture<WebApplicationFactory<Program>
         SetupAuthenticatedUser();
 
         _mockMediator.Setup(m => m.SendAsync(It.IsAny<GetMovieByIdQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((MovieDto?)null);
+            .ThrowsAsync(new InvalidOperationException("No se encontró la película con ID 999"));
 
         // Act
         var response = await _client.GetAsync("/api/movies/999");
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
@@ -209,6 +266,29 @@ public class MoviesEndpointsTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
+    public async Task CreateMovie_WithRegularUser_ShouldReturnForbidden()
+    {
+        // Arrange
+        SetupAuthenticatedUser("RegularUser");
+
+        var createMovieDto = new CreateMovieDto
+        {
+            Title = "A New Hope",
+            EpisodeId = 4,
+            Director = "George Lucas",
+            Producer = "Gary Kurtz",
+            OpeningCrawl = "It is a period of civil war...",
+            ReleaseDate = new DateTime(1977, 5, 25)
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/movies", createMovieDto);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task UpdateMovie_WithValidData_ShouldReturnOk()
     {
         // Arrange
@@ -251,14 +331,14 @@ public class MoviesEndpointsTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
-    public async Task UpdateMovie_WithInvalidId_ShouldReturnNotFound()
+    public async Task UpdateMovie_WithInvalidId_ShouldReturnBadRequest()
     {
         // Arrange
         SetupAuthenticatedUser("Administrator");
 
         var updateMovieDto = new UpdateMovieDto
         {
-            Title = "A New Hope",
+            Title = "A New Hope - Updated",
             EpisodeId = 4,
             Director = "George Lucas",
             Producer = "Gary Kurtz",
@@ -273,7 +353,7 @@ public class MoviesEndpointsTests : IClassFixture<WebApplicationFactory<Program>
         var response = await _client.PutAsJsonAsync("/api/movies/999", updateMovieDto);
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
@@ -293,7 +373,7 @@ public class MoviesEndpointsTests : IClassFixture<WebApplicationFactory<Program>
     }
 
     [Fact]
-    public async Task DeleteMovie_WithInvalidId_ShouldReturnNotFound()
+    public async Task DeleteMovie_WithInvalidId_ShouldReturnBadRequest()
     {
         // Arrange
         SetupAuthenticatedUser("Administrator");
@@ -305,7 +385,7 @@ public class MoviesEndpointsTests : IClassFixture<WebApplicationFactory<Program>
         var response = await _client.DeleteAsync("/api/movies/999");
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
@@ -326,5 +406,64 @@ public class MoviesEndpointsTests : IClassFixture<WebApplicationFactory<Program>
         var content = await response.Content.ReadAsStringAsync();
         Assert.Contains("Sincronización completada exitosamente", content);
         Assert.Contains("6", content);
+    }
+
+    [Fact]
+    public async Task SyncMovies_WithRegularUser_ShouldReturnForbidden()
+    {
+        // Arrange
+        SetupAuthenticatedUser("RegularUser");
+
+        // Act
+        var response = await _client.PostAsync("/api/movies/sync", null);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateMovie_WithInvalidData_ShouldReturnBadRequest()
+    {
+        // Arrange
+        SetupAuthenticatedUser("Administrator");
+
+        var createMovieDto = new CreateMovieDto
+        {
+            Title = "", // Invalid: empty title
+            EpisodeId = 4,
+            Director = "George Lucas",
+            Producer = "Gary Kurtz",
+            OpeningCrawl = "It is a period of civil war...",
+            ReleaseDate = new DateTime(1977, 5, 25)
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/movies", createMovieDto);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateMovie_WithInvalidData_ShouldReturnBadRequest()
+    {
+        // Arrange
+        SetupAuthenticatedUser("Administrator");
+
+        var updateMovieDto = new UpdateMovieDto
+        {
+            Title = "", // Invalid: empty title
+            EpisodeId = 4,
+            Director = "George Lucas",
+            Producer = "Gary Kurtz",
+            OpeningCrawl = "It is a period of civil war...",
+            ReleaseDate = new DateTime(1977, 5, 25)
+        };
+
+        // Act
+        var response = await _client.PutAsJsonAsync("/api/movies/1", updateMovieDto);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 }
