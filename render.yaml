@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: conexa-starwars-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ASPNETCORE_URLS
+        value: http://+:10000
+      - key: ConnectionStrings__DefaultConnection
+        fromDatabase:
+          name: conexa-starwars-db
+          property: connectionString
+      - key: JwtSettings__SecretKey
+        generateValue: true
+      - key: JwtSettings__Issuer
+        value: ConexaStarWarsAPI
+      - key: JwtSettings__Audience
+        value: ConexaStarWarsClient
+
+databases:
+  - name: conexa-starwars-db
+    databaseName: conexastarwarsdb
+    user: conexauser 

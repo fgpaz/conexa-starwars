@@ -2,7 +2,7 @@
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 EXPOSE 80
-EXPOSE 443
+ENV ASPNETCORE_URLS=http://+:80
 
 # Usar la imagen del SDK para compilar
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
@@ -33,6 +33,10 @@ COPY --from=publish /app/publish .
 
 # Crear directorio para logs
 RUN mkdir -p /app/logs
+
+# Crear usuario no-root para seguridad
+RUN adduser --disabled-password --gecos '' --uid 1000 appuser && chown -R appuser /app
+USER appuser
 
 # Variables de entorno
 ENV ASPNETCORE_ENVIRONMENT=Production

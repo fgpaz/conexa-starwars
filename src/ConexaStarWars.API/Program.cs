@@ -36,6 +36,9 @@ builder.Host.UseSerilog();
 // Add services to the container.
 // Remover AddControllers() ya que usaremos Minimal APIs
 
+// Health Checks
+builder.Services.AddHealthChecks();
+
 // Entity Framework
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
@@ -211,6 +214,9 @@ app.UseAuthorization();
 // Mapear Minimal API Endpoints
 app.MapAuthEndpoints();
 app.MapMoviesEndpoints();
+
+// Health Check endpoint para Railway
+app.MapHealthChecks("/health");
 
 // Inicializar datos
 using (var scope = app.Services.CreateScope())
