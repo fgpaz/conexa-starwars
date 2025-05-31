@@ -27,7 +27,7 @@ public class TestAuthenticationHandler(
 {
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        var authorizationHeader = Request.Headers.Authorization.ToString();
+        var authorizationHeader = Request.Headers["Authorization"].FirstOrDefault();
         
         if (string.IsNullOrEmpty(authorizationHeader))
         {
@@ -83,12 +83,18 @@ public class MoviesEndpointsTests : IClassFixture<WebApplicationFactory<Program>
                 services.AddAuthentication("Test")
                     .AddScheme<TestAuthenticationSchemeOptions, TestAuthenticationHandler>("Test", options => { });
                     
-                // Configurar autorización sin roles para simplificar tests
+                // Configurar autorización con las mismas políticas que la aplicación
                 services.AddAuthorization(options =>
                 {
                     options.DefaultPolicy = new AuthorizationPolicyBuilder("Test")
                         .RequireAuthenticatedUser()
                         .Build();
+                        
+                    options.AddPolicy("AdminOnly", policy =>
+                        policy.RequireRole("Administrator"));
+                        
+                    options.AddPolicy("UserOrAdmin", policy =>
+                        policy.RequireRole("RegularUser", "Administrator"));
                 });
             });
         });

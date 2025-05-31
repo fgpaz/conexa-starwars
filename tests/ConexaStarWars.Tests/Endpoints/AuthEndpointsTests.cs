@@ -133,7 +133,9 @@ public class AuthEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
         var content = await response.Content.ReadAsStringAsync();
-        Assert.Contains("El email ya está registrado", content);
+        // El contenido puede estar en formato JSON, así que verificamos que contenga el mensaje de error
+        Assert.True(content.Contains("El email ya está registrado"), 
+                   $"Contenido de respuesta inesperado: {content}");
     }
 
     [Fact]

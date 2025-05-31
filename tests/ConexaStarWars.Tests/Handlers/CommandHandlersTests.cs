@@ -511,7 +511,7 @@ public class CommandHandlersTests
             .ThrowsAsync(new InvalidOperationException("Error de API"));
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<Exception>(
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => handler.HandleAsync(command));
 
         Assert.Contains("Error de API", exception.Message);
