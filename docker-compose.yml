@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  conexa-starwars-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+      - "8443:443"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=ConexaStarWarsDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true;
+      - JwtSettings__SecretKey=ConexaStarWarsSecretKeyForJWTTokenGeneration2024!
+      - JwtSettings__Issuer=ConexaStarWarsAPI
+      - JwtSettings__Audience=ConexaStarWarsClient
+    depends_on:
+      - sqlserver
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - conexa-network
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong@Passw0rd
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - conexa-network
+
+volumes:
+  sqlserver_data:
+
+networks:
+  conexa-network:
+    driver: bridge 

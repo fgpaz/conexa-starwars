@@ -1,0 +1,295 @@
+{
+	"info": {
+		"_postman_id": "conexa-starwars-api",
+		"name": "Conexa Star Wars API",
+		"description": "Colección completa de endpoints para la API de gestión de películas de Star Wars",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://localhost:7001",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Pérez\",\n  \"email\": \"juan@ejemplo.com\",\n  \"password\": \"MiPassword123!\",\n  \"confirmPassword\": \"MiPassword123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						},
+						"description": "Registra un nuevo usuario en el sistema. El usuario se crea automáticamente con el rol RegularUser."
+					},
+					"response": []
+				},
+				{
+					"name": "Login Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('jwt_token', response.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@conexa.com\",\n  \"password\": \"Admin123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Autentica al usuario administrador y obtiene un token JWT."
+					},
+					"response": []
+				},
+				{
+					"name": "Login Regular User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('jwt_token', response.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@conexa.com\",\n  \"password\": \"User123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Autentica al usuario regular y obtiene un token JWT."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para autenticación y registro de usuarios"
+		},
+		{
+			"name": "Movies",
+			"item": [
+				{
+					"name": "Get All Movies",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/movies",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"movies"
+							]
+						},
+						"description": "Obtiene la lista de todas las películas. Requiere autenticación."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Movie by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/movies/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"movies",
+								"1"
+							]
+						},
+						"description": "Obtiene los detalles de una película específica. Solo usuarios RegularUser y Administrator."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Movie (Admin Only)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Una Nueva Esperanza\",\n  \"episodeId\": 4,\n  \"openingCrawl\": \"Es un período de guerra civil. Las naves espaciales rebeldes, atacando desde una base oculta, han logrado su primera victoria contra el malvado Imperio Galáctico.\",\n  \"director\": \"George Lucas\",\n  \"producer\": \"Gary Kurtz\",\n  \"releaseDate\": \"1977-05-25T00:00:00Z\",\n  \"characters\": [\"Luke Skywalker\", \"Princess Leia\", \"Han Solo\"],\n  \"planets\": [\"Tatooine\", \"Alderaan\"],\n  \"starships\": [\"Death Star\", \"Millennium Falcon\"],\n  \"vehicles\": [\"Sandcrawler\"],\n  \"species\": [\"Human\", \"Droid\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/movies",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"movies"
+							]
+						},
+						"description": "Crea una nueva película. Solo usuarios con rol Administrator."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Movie (Admin Only)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Una Nueva Esperanza - Actualizada\",\n  \"episodeId\": 4,\n  \"openingCrawl\": \"Es un período de guerra civil. Las naves espaciales rebeldes, atacando desde una base oculta, han logrado su primera victoria contra el malvado Imperio Galáctico.\",\n  \"director\": \"George Lucas\",\n  \"producer\": \"Gary Kurtz\",\n  \"releaseDate\": \"1977-05-25T00:00:00Z\",\n  \"characters\": [\"Luke Skywalker\", \"Princess Leia\", \"Han Solo\", \"Darth Vader\"],\n  \"planets\": [\"Tatooine\", \"Alderaan\", \"Death Star\"],\n  \"starships\": [\"Death Star\", \"Millennium Falcon\", \"Imperial Star Destroyer\"],\n  \"vehicles\": [\"Sandcrawler\", \"Landspeeder\"],\n  \"species\": [\"Human\", \"Droid\", \"Jawa\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/movies/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"movies",
+								"1"
+							]
+						},
+						"description": "Actualiza una película existente. Solo usuarios con rol Administrator."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Movie (Admin Only)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/movies/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"movies",
+								"1"
+							]
+						},
+						"description": "Elimina una película. Solo usuarios con rol Administrator."
+					},
+					"response": []
+				},
+				{
+					"name": "Sync Movies from Star Wars API (Admin Only)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/movies/sync",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"movies",
+								"sync"
+							]
+						},
+						"description": "Sincroniza las películas desde la API pública de Star Wars. Solo usuarios con rol Administrator."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para gestión de películas"
+		}
+	]
+} 

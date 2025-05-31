@@ -1,0 +1,353 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2024-01-15T00:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2023.5.8",
+  "resources": [
+    {
+      "_id": "req_auth_register",
+      "parentId": "fld_auth",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "url": "{{ _.baseUrl }}/api/auth/register",
+      "name": "Register User",
+      "description": "Registra un nuevo usuario en el sistema",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Pérez\",\n  \"email\": \"juan.perez@example.com\",\n  \"password\": \"Password123!\",\n  \"confirmPassword\": \"Password123!\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1705276800000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_auth",
+      "parentId": "wrk_main",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "name": "Authentication",
+      "description": "Endpoints de autenticación y autorización",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1705276800000,
+      "_type": "request_group"
+    },
+    {
+      "_id": "wrk_main",
+      "parentId": null,
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "name": "Conexa Star Wars API",
+      "description": "API completa para gestión de películas de Star Wars",
+      "scope": "collection",
+      "_type": "workspace"
+    },
+    {
+      "_id": "req_auth_login",
+      "parentId": "fld_auth",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "url": "{{ _.baseUrl }}/api/auth/login",
+      "name": "Login User",
+      "description": "Autentica un usuario y devuelve un token JWT",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"admin@conexa.com\",\n  \"password\": \"Admin123!\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1705276799000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_auth_login_regular",
+      "parentId": "fld_auth",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "url": "{{ _.baseUrl }}/api/auth/login",
+      "name": "Login Regular User",
+      "description": "Login con usuario regular",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"user@conexa.com\",\n  \"password\": \"User123!\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1705276798000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_movies_get_all",
+      "parentId": "fld_movies",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "url": "{{ _.baseUrl }}/api/movies",
+      "name": "Get All Movies",
+      "description": "Obtiene la lista de todas las películas",
+      "method": "GET",
+      "body": {},
+      "parameters": [
+        {
+          "name": "pageNumber",
+          "value": "1",
+          "description": "Número de página",
+          "disabled": true
+        },
+        {
+          "name": "pageSize",
+          "value": "10",
+          "description": "Tamaño de página",
+          "disabled": true
+        },
+        {
+          "name": "searchTerm",
+          "value": "",
+          "description": "Término de búsqueda",
+          "disabled": true
+        }
+      ],
+      "headers": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.jwtToken }}"
+      },
+      "metaSortKey": -1705276797000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_movies",
+      "parentId": "wrk_main",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "name": "Movies",
+      "description": "Endpoints para gestión de películas",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1705276799000,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_movies_get_by_id",
+      "parentId": "fld_movies",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "url": "{{ _.baseUrl }}/api/movies/1",
+      "name": "Get Movie by ID",
+      "description": "Obtiene los detalles de una película específica",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.jwtToken }}"
+      },
+      "metaSortKey": -1705276796000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_movies_create",
+      "parentId": "fld_movies",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "url": "{{ _.baseUrl }}/api/movies",
+      "name": "Create Movie (Admin Only)",
+      "description": "Crea una nueva película - Solo administradores",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"Una Nueva Esperanza\",\n  \"episodeId\": 4,\n  \"openingCrawl\": \"Es un período de guerra civil. Las naves espaciales rebeldes, atacando desde una base oculta, han logrado su primera victoria contra el malvado Imperio Galáctico.\",\n  \"director\": \"George Lucas\",\n  \"producer\": \"Gary Kurtz, Rick McCallum\",\n  \"releaseDate\": \"1977-05-25T00:00:00Z\",\n  \"characters\": [\"Luke Skywalker\", \"Princess Leia\", \"Han Solo\", \"Darth Vader\"],\n  \"planets\": [\"Tatooine\", \"Alderaan\", \"Yavin IV\"],\n  \"starships\": [\"Death Star\", \"Millennium Falcon\", \"X-wing\"],\n  \"vehicles\": [\"Sandcrawler\", \"Landspeeder\"],\n  \"species\": [\"Human\", \"Droid\", \"Wookiee\"]\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.jwtToken }}"
+      },
+      "metaSortKey": -1705276795000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_movies_update",
+      "parentId": "fld_movies",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "url": "{{ _.baseUrl }}/api/movies/1",
+      "name": "Update Movie (Admin Only)",
+      "description": "Actualiza una película existente - Solo administradores",
+      "method": "PUT",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"Una Nueva Esperanza - Edición Especial\",\n  \"episodeId\": 4,\n  \"openingCrawl\": \"Es un período de guerra civil. Las naves espaciales rebeldes, atacando desde una base oculta, han logrado su primera victoria contra el malvado Imperio Galáctico.\",\n  \"director\": \"George Lucas\",\n  \"producer\": \"Gary Kurtz, Rick McCallum\",\n  \"releaseDate\": \"1977-05-25T00:00:00Z\",\n  \"characters\": [\"Luke Skywalker\", \"Princess Leia\", \"Han Solo\", \"Darth Vader\"],\n  \"planets\": [\"Tatooine\", \"Alderaan\", \"Yavin IV\"],\n  \"starships\": [\"Death Star\", \"Millennium Falcon\", \"X-wing\"],\n  \"vehicles\": [\"Sandcrawler\", \"Landspeeder\"],\n  \"species\": [\"Human\", \"Droid\", \"Wookiee\"]\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.jwtToken }}"
+      },
+      "metaSortKey": -1705276794000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_movies_delete",
+      "parentId": "fld_movies",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "url": "{{ _.baseUrl }}/api/movies/1",
+      "name": "Delete Movie (Admin Only)",
+      "description": "Elimina una película - Solo administradores",
+      "method": "DELETE",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.jwtToken }}"
+      },
+      "metaSortKey": -1705276793000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_movies_sync",
+      "parentId": "fld_movies",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "url": "{{ _.baseUrl }}/api/movies/sync",
+      "name": "Sync Movies from Star Wars API (Admin Only)",
+      "description": "Sincroniza películas desde la API de Star Wars - Solo administradores",
+      "method": "POST",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.jwtToken }}"
+      },
+      "metaSortKey": -1705276792000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "env_base",
+      "parentId": "wrk_main",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "name": "Base Environment",
+      "data": {
+        "baseUrl": "https://localhost:5001",
+        "jwtToken": ""
+      },
+      "dataPropertyOrder": {
+        "&": ["baseUrl", "jwtToken"]
+      },
+      "color": null,
+      "isPrivate": false,
+      "metaSortKey": 1705276800000,
+      "_type": "environment"
+    },
+    {
+      "_id": "jar_cookies",
+      "parentId": "wrk_main",
+      "modified": 1705276800000,
+      "created": 1705276800000,
+      "name": "Default Jar",
+      "cookies": [],
+      "_type": "cookie_jar"
+    }
+  ]
+} 
