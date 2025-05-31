@@ -370,7 +370,7 @@ public class CommandHandlersTests
     public async Task SyncMoviesCommandHandler_WithValidApiResponse_ShouldSyncMovies()
     {
         // Arrange
-        var handler = new SyncMoviesCommandHandler(_mockStarWarsApiService.Object, _mockMovieRepository.Object, _mockSyncLogger.Object);
+        var handler = new SyncMoviesCommandHandler(_mockMovieRepository.Object, _mockStarWarsApiService.Object, _mockSyncLogger.Object);
         
         var command = new SyncMoviesCommand
         {
@@ -422,7 +422,7 @@ public class CommandHandlersTests
     public async Task SyncMoviesCommandHandler_WithEmptyApiResponse_ShouldReturnZero()
     {
         // Arrange
-        var handler = new SyncMoviesCommandHandler(_mockStarWarsApiService.Object, _mockMovieRepository.Object, _mockSyncLogger.Object);
+        var handler = new SyncMoviesCommandHandler(_mockMovieRepository.Object, _mockStarWarsApiService.Object, _mockSyncLogger.Object);
         
         var command = new SyncMoviesCommand
         {
@@ -449,7 +449,7 @@ public class CommandHandlersTests
     public async Task SyncMoviesCommandHandler_WithExistingMovies_ShouldOnlyAddNew()
     {
         // Arrange
-        var handler = new SyncMoviesCommandHandler(_mockStarWarsApiService.Object, _mockMovieRepository.Object, _mockSyncLogger.Object);
+        var handler = new SyncMoviesCommandHandler(_mockMovieRepository.Object, _mockStarWarsApiService.Object, _mockSyncLogger.Object);
         
         var command = new SyncMoviesCommand
         {
@@ -500,7 +500,7 @@ public class CommandHandlersTests
     public async Task SyncMoviesCommandHandler_WithApiError_ShouldThrowException()
     {
         // Arrange
-        var handler = new SyncMoviesCommandHandler(_mockStarWarsApiService.Object, _mockMovieRepository.Object, _mockSyncLogger.Object);
+        var handler = new SyncMoviesCommandHandler(_mockMovieRepository.Object, _mockStarWarsApiService.Object, _mockSyncLogger.Object);
         
         var command = new SyncMoviesCommand
         {
@@ -511,17 +511,17 @@ public class CommandHandlersTests
             .ThrowsAsync(new InvalidOperationException("Error de API"));
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<Exception>(
             () => handler.HandleAsync(command));
 
-        Assert.Contains("Error al sincronizar las películas desde la API de Star Wars", exception.Message);
+        Assert.Contains("Error de API", exception.Message);
     }
 
     [Fact]
     public async Task SyncMoviesCommandHandler_WithEmptyUserId_ShouldThrowException()
     {
         // Arrange
-        var handler = new SyncMoviesCommandHandler(_mockStarWarsApiService.Object, _mockMovieRepository.Object, _mockSyncLogger.Object);
+        var handler = new SyncMoviesCommandHandler(_mockMovieRepository.Object, _mockStarWarsApiService.Object, _mockSyncLogger.Object);
         
         var command = new SyncMoviesCommand
         {

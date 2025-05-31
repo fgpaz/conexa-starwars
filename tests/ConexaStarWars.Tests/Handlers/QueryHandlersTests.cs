@@ -12,16 +12,9 @@ namespace ConexaStarWars.Tests.Handlers;
 
 public class QueryHandlersTests
 {
-    private readonly Mock<IRepository<Movie>> _mockMovieRepository;
-    private readonly Mock<ILogger<GetAllMoviesQueryHandler>> _mockGetAllLogger;
-    private readonly Mock<ILogger<GetMovieByIdQueryHandler>> _mockGetByIdLogger;
-
-    public QueryHandlersTests()
-    {
-        _mockMovieRepository = new Mock<IRepository<Movie>>();
-        _mockGetAllLogger = new Mock<ILogger<GetAllMoviesQueryHandler>>();
-        _mockGetByIdLogger = new Mock<ILogger<GetMovieByIdQueryHandler>>();
-    }
+    private readonly Mock<IRepository<Movie>> _mockMovieRepository = new();
+    private readonly Mock<ILogger<GetAllMoviesQueryHandler>> _mockGetAllLogger = new();
+    private readonly Mock<ILogger<GetMovieByIdQueryHandler>> _mockGetByIdLogger = new();
 
     #region GetAllMoviesQueryHandler Tests
 

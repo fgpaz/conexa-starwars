@@ -17,6 +17,9 @@ public class SyncMoviesCommandHandler(
 
         try
         {
+            // Validar UserId
+            if (string.IsNullOrWhiteSpace(request.UserId)) throw new ArgumentException("El ID del usuario es requerido");
+
             var apiResponse = await starWarsApiService.GetFilmsAsync();
             var syncedCount = 0;
 

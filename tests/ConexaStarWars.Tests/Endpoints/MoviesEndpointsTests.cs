@@ -20,17 +20,14 @@ namespace ConexaStarWars.Tests.Endpoints;
 
 public class TestAuthenticationSchemeOptions : AuthenticationSchemeOptions { }
 
-public class TestAuthenticationHandler : AuthenticationHandler<TestAuthenticationSchemeOptions>
+public class TestAuthenticationHandler(
+    IOptionsMonitor<TestAuthenticationSchemeOptions> options,
+    ILoggerFactory logger,
+    UrlEncoder encoder) : AuthenticationHandler<TestAuthenticationSchemeOptions>(options, logger, encoder)
 {
-    public TestAuthenticationHandler(IOptionsMonitor<TestAuthenticationSchemeOptions> options,
-        ILoggerFactory logger, UrlEncoder encoder)
-        : base(options, logger, encoder)
-    {
-    }
-
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        var authorizationHeader = Request.Headers["Authorization"].ToString();
+        var authorizationHeader = Request.Headers.Authorization.ToString();
         
         if (string.IsNullOrEmpty(authorizationHeader))
         {

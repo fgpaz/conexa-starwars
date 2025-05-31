@@ -17,8 +17,11 @@ public class CreateMovieCommandHandler(
 
         try
         {
+            // Validar UserId
+            if (string.IsNullOrWhiteSpace(request.UserId)) throw new ArgumentException("El ID del usuario es requerido");
+            
             // Validar datos de entrada
-            if (request.MovieData == null) throw new ArgumentException("Los datos de la película son requeridos");
+            if (request.MovieData == null) throw new ArgumentNullException(nameof(request.MovieData), "Los datos de la película son requeridos");
 
             if (string.IsNullOrWhiteSpace(request.MovieData.Title)) throw new ArgumentException("El título de la película es requerido");
 

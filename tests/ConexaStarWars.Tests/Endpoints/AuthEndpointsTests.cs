@@ -3,11 +3,11 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using ConexaStarWars.Core.DTOs;
 using ConexaStarWars.Core.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
-using Microsoft.AspNetCore.Authorization;
 
 namespace ConexaStarWars.Tests.Endpoints;
 
